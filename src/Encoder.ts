@@ -61,6 +61,14 @@ export type EncoderOptions<ContextType = undefined> = Partial<
     ignoreUndefined: boolean;
 
     /**
+     * If `true`, undefineds are not handled by the library and are instead
+     * made available to extension codecs
+     *
+     * Defaults to `false`
+     */
+    allowUndefinedCustomEncoding: boolean;
+
+    /**
      * If `true`, integer numbers are encoded as floating point numbers,
      * with the `forceFloat32` option taken into account.
      *
@@ -80,6 +88,7 @@ export class Encoder<ContextType = undefined> {
   private readonly sortKeys: boolean;
   private readonly forceFloat32: boolean;
   private readonly ignoreUndefined: boolean;
+  private readonly allowUndefinedCustomEncoding: boolean;
   private readonly forceIntegerToFloat: boolean;
 
   private pos: number;
@@ -96,6 +105,7 @@ export class Encoder<ContextType = undefined> {
     this.sortKeys = options?.sortKeys ?? false;
     this.forceFloat32 = options?.forceFloat32 ?? false;
     this.ignoreUndefined = options?.ignoreUndefined ?? false;
+    this.allowUndefinedCustomEncoding = options?.allowUndefinedCustomEncoding ?? false;
     this.forceIntegerToFloat = options?.forceIntegerToFloat ?? false;
 
     this.pos = 0;
@@ -132,7 +142,8 @@ export class Encoder<ContextType = undefined> {
       throw new Error(`Too deep objects in depth ${depth}`);
     }
 
-    if (object == null) {
+    const objectIsNil = this.allowUndefinedCustomEncoding ? object === null : object == null
+    if (objectIsNil) {
       this.encodeNil();
     } else if (typeof object === "boolean") {
       this.encodeBoolean(object);

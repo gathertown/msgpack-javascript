@@ -96,6 +96,32 @@ describe("ExtensionCodec", () => {
     });
   });
 
+  context("undefined", () => {
+    const extensionCodec = new ExtensionCodec();
+
+    // undefined
+    extensionCodec.register({
+      type: 0x1,
+      encode: (object: unknown): Uint8Array | null => {
+        if (object === undefined) {
+          return new Uint8Array(0);
+        }
+        return null;
+      },
+      decode: (data: Uint8Array) => {
+        if (data.length === 0) {
+          return undefined;
+        }
+        throw new Error("invalid data");
+      },
+    });
+
+    it("encodes and decodes undefined (synchronously)", () => {
+      const encoded = encode([undefined], { extensionCodec, allowUndefinedCustomEncoding: true });
+      assert.deepStrictEqual(decode(encoded, { extensionCodec }), [undefined]);
+    });
+  });
+
   context("custom extensions with custom context", () => {
     class Context {
       public expectations: Array<any> = [];
