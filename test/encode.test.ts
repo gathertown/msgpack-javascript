@@ -50,15 +50,22 @@ describe("encode", () => {
   });
 
   context("ignoreUndefined", () => {
-    it("encodes { foo: undefined } as is by default", () => {
-      assert.deepStrictEqual(decode(encode({ foo: undefined, bar: 42 })), { foo: null, bar: 42 });
+    it("encodes { foo: undefined } as undefined by default (via ext type 0, msgpackr-compatible)", () => {
+      assert.deepStrictEqual(decode(encode({ foo: undefined, bar: 42 })), { foo: undefined, bar: 42 });
     });
 
-    it("encodes { foo: undefined } as is with `ignoreUndefined: false`", () => {
+    it("encodes { foo: undefined } as undefined with `ignoreUndefined: false`", () => {
       assert.deepStrictEqual(decode(encode({ foo: undefined, bar: 42 }, { ignoreUndefined: false })), {
-        foo: null,
+        foo: undefined,
         bar: 42,
       });
+    });
+
+    it("encodes { foo: undefined } as null with `allowUndefinedCustomEncoding: false`", () => {
+      assert.deepStrictEqual(
+        decode(encode({ foo: undefined, bar: 42 }, { allowUndefinedCustomEncoding: false })),
+        { foo: null, bar: 42 },
+      );
     });
 
     it("encodes { foo: undefined } to {} with `ignoreUndefined: true`", () => {

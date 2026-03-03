@@ -62,9 +62,10 @@ export type EncoderOptions<ContextType = undefined> = Partial<
 
     /**
      * If `true`, undefineds are not handled by the library and are instead
-     * made available to extension codecs
+     * made available to extension codecs.
      *
-     * Defaults to `false`
+     * Defaults to `true` for wire-protocol compatibility with msgpackr,
+     * which encodes `undefined` as fixext1 type 0.
      */
     allowUndefinedCustomEncoding: boolean;
 
@@ -105,7 +106,7 @@ export class Encoder<ContextType = undefined> {
     this.sortKeys = options?.sortKeys ?? false;
     this.forceFloat32 = options?.forceFloat32 ?? false;
     this.ignoreUndefined = options?.ignoreUndefined ?? false;
-    this.allowUndefinedCustomEncoding = options?.allowUndefinedCustomEncoding ?? false;
+    this.allowUndefinedCustomEncoding = options?.allowUndefinedCustomEncoding ?? true;
     this.forceIntegerToFloat = options?.forceIntegerToFloat ?? false;
 
     this.pos = 0;

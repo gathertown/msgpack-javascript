@@ -50,3 +50,14 @@ export {
   encodeTimestampExtension,
   decodeTimestampExtension,
 };
+
+import {
+  EXT_UNDEFINED,
+  encodeUndefinedExtension,
+  decodeUndefinedExtension,
+} from "./undefined";
+export {
+  EXT_UNDEFINED,
+  encodeUndefinedExtension,
+  decodeUndefinedExtension,
+};

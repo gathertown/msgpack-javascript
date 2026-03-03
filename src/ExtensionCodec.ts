@@ -2,6 +2,7 @@
 
 import { ExtData } from "./ExtData";
 import { timestampExtension } from "./timestamp";
+import { undefinedExtension } from "./undefined";
 
 export type ExtensionDecoderType<ContextType> = (
   data: Uint8Array,
@@ -37,6 +38,7 @@ export class ExtensionCodec<ContextType = undefined> implements ExtensionCodecTy
 
   public constructor() {
     this.register(timestampExtension);
+    this.register(undefinedExtension);
   }
 
   public register({
