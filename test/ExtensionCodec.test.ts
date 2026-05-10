@@ -248,9 +248,7 @@ describe("ExtensionCodec", () => {
       decode: (_data: Uint8Array) => undefined,
     });
 
-    // encoder is declared here so the Box codec below can close over it.
-    // It is assigned after registration so the extensionCodec is fully set up first.
-    let encoder: Encoder;
+    const encoder = new Encoder({ extensionCodec, allowUndefinedCustomEncoding: true });
 
     // Box handler (type 0x2): calls encoder.encode() recursively to trigger clone()
     extensionCodec.register({
@@ -263,8 +261,6 @@ describe("ExtensionCodec", () => {
       },
       decode: (data: Uint8Array) => new Box(decode(data, { extensionCodec })),
     });
-
-    encoder = new Encoder({ extensionCodec, allowUndefinedCustomEncoding: true });
 
     it("propagates allowUndefinedCustomEncoding through clone()", () => {
       // Encoding Box(undefined):
