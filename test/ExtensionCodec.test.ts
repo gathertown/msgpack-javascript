@@ -1,6 +1,6 @@
 import assert from "assert";
 import util from "util";
-import { encode, decode, ExtensionCodec, decodeAsync } from "../src/index.ts";
+import { encode, decode, Encoder, ExtensionCodec, decodeAsync } from "../src/index.ts";
 
 describe("ExtensionCodec", () => {
   context("timestamp", () => {
@@ -199,6 +199,78 @@ describe("ExtensionCodec", () => {
           decoding: magic2.val,
         },
       ]);
+    });
+  });
+
+  context("allowUndefinedCustomEncoding", () => {
+    const extensionCodec = new ExtensionCodec();
+
+    extensionCodec.register({
+      type: 0x1,
+      encode: (object: unknown): Uint8Array | null => {
+        if (object === undefined) {
+          return new Uint8Array(0);
+        }
+        return null;
+      },
+      decode: (data: Uint8Array) => {
+        if (data.length === 0) {
+          return undefined;
+        }
+        throw new Error("invalid data");
+      },
+    });
+
+    it("encodes and decodes undefined (synchronously)", () => {
+      const encoded = encode([undefined], { extensionCodec, allowUndefinedCustomEncoding: true });
+      assert.deepStrictEqual(decode(encoded, { extensionCodec }), [undefined]);
+    });
+  });
+
+  context("allowUndefinedCustomEncoding with clone() propagation (reentrancy)", () => {
+    // Box is a wrapper type whose extension codec calls encoder.encode() recursively,
+    // forcing the encoder's reentrancy guard to invoke clone().
+    class Box {
+      constructor(public readonly value: unknown) {}
+    }
+
+    const extensionCodec = new ExtensionCodec();
+
+    // Undefined handler (type 0x1)
+    extensionCodec.register({
+      type: 0x1,
+      encode: (object: unknown): Uint8Array | null => {
+        if (object === undefined) {
+          return new Uint8Array(0);
+        }
+        return null;
+      },
+      decode: (_data: Uint8Array) => undefined,
+    });
+
+    const encoder = new Encoder({ extensionCodec, allowUndefinedCustomEncoding: true });
+
+    // Box handler (type 0x2): calls encoder.encode() recursively to trigger clone()
+    extensionCodec.register({
+      type: 0x2,
+      encode: (object: unknown): Uint8Array | null => {
+        if (object instanceof Box) {
+          return encoder.encode(object.value);
+        }
+        return null;
+      },
+      decode: (data: Uint8Array) => new Box(decode(data, { extensionCodec })),
+    });
+
+    it("propagates allowUndefinedCustomEncoding through clone()", () => {
+      // Encoding Box(undefined):
+      //   outer encode() handles Box via type 0x2, which calls encoder.encode(undefined)
+      //   encoder is already entered, so clone() fires — the clone must carry
+      //   allowUndefinedCustomEncoding or undefined would become nil instead of
+      //   reaching the type 0x1 codec.
+      const encoded = encoder.encode(new Box(undefined));
+      const decoded = decode(encoded, { extensionCodec }) as Box;
+      assert.strictEqual(decoded.value, undefined);
     });
   });
 
